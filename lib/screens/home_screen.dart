@@ -18,8 +18,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final Api api = Api(widget.token);
   int selected = 0;
-  final modules = const [HotelModule.types,HotelModule.rooms,HotelModule.guests,HotelModule.reservations,HotelModule.consumptions];
   bool get isAdmin => value(widget.user,'role','').toLowerCase() == 'administrador';
+  List<HotelModule> get modules => isAdmin
+      ? const [HotelModule.types, HotelModule.rooms, HotelModule.guests, HotelModule.reservations, HotelModule.consumptions]
+      : const [HotelModule.guests, HotelModule.reservations, HotelModule.consumptions];
 
   Future<void> logout() async {
     try { await api.call('/logout',method:'POST'); } catch (_) {}
@@ -29,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final current = selected == 0 ? null : modules[selected - 1];
+    final current = isAdmin && selected == 0 ? null : modules[selected - (isAdmin ? 1 : 0)];
     return Scaffold(
       appBar: AppBar(title:Text(current == null ? 'Panel principal' : hotelModules[current]!.title)),
       drawer: Drawer(
@@ -40,9 +42,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: ListView(
                   children: [
-                    ListTile(selected:selected == 0,leading:const Icon(Icons.dashboard_outlined),title:const Text('Dashboard'),onTap:()=>choose(0)),
+                    if (isAdmin) ListTile(selected:selected == 0,leading:const Icon(Icons.dashboard_outlined),title:const Text('Dashboard'),onTap:()=>choose(0)),
                     for (var index = 0; index < modules.length; index++)
-                      ListTile(selected:selected == index + 1,leading:Icon(hotelModules[modules[index]]!.icon),title:Text(hotelModules[modules[index]]!.title),onTap:()=>choose(index + 1)),
+                      ListTile(selected:selected == index + (isAdmin ? 1 : 0),leading:Icon(hotelModules[modules[index]]!.icon),title:Text(hotelModules[modules[index]]!.title),onTap:()=>choose(index + (isAdmin ? 1 : 0))),
                   ],
                 ),
               ),

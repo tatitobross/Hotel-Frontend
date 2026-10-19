@@ -69,6 +69,57 @@ class RecordDetails extends StatelessWidget {
   }
 }
 
+class HotelInvoiceDialog extends StatelessWidget {
+  const HotelInvoiceDialog({super.key, required this.invoice});
+
+  final Map<String, dynamic> invoice;
+
+  @override
+  Widget build(BuildContext context) {
+    final consumptions = invoice['consumos'] is List ? List<dynamic>.from(invoice['consumos'] as List) : <dynamic>[];
+    return AlertDialog(
+      title: const Row(children: [Icon(Icons.receipt_long), SizedBox(width: 8), Text('Factura del hotel')]),
+      content: SizedBox(
+        width: 460,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _row('No.', invoice['numero']),
+              _row('Huésped', invoice['huesped']),
+              _row('Documento', invoice['documento_huesped']),
+              _row('Habitación', '${invoice['habitacion']} · ${invoice['tipo_habitacion']}'),
+              _row('Estadía', '${invoice['fecha_entrada']} al ${invoice['fecha_salida']}'),
+              _row('Hospedaje', '${invoice['noches']} noche(s) · ${money(invoice['total_hospedaje'])}'),
+              if (consumptions.isNotEmpty) ...[
+                const Divider(),
+                const Align(alignment: Alignment.centerLeft, child: Text('Consumos', style: TextStyle(fontWeight: FontWeight.bold))),
+                for (final consumption in consumptions)
+                  _row(
+                    '${consumption['descripcion']} × ${consumption['cantidad']}',
+                    money(consumption['total']),
+                  ),
+              ],
+              const Divider(),
+              _row('TOTAL', money(invoice['total']), highlight: true),
+            ],
+          ),
+        ),
+      ),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar'))],
+    );
+  }
+
+  Widget _row(String label, Object? amount, {bool highlight = false}) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(children: [
+          Expanded(child: Text(label, style: TextStyle(fontWeight: highlight ? FontWeight.bold : null))),
+          const SizedBox(width: 12),
+          Expanded(child: Text(amount?.toString() ?? '—', textAlign: TextAlign.end, style: TextStyle(fontWeight: highlight ? FontWeight.bold : null))),
+        ]),
+      );
+}
+
 class RecordEditor extends StatefulWidget {
   const RecordEditor({
     super.key,

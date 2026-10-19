@@ -3,3 +3,8 @@
 build/
 .flutter-plugins
 .flutter-plugins-dependencies
+.idea/
+*.iml
+.gradle-user-home/
+.pub-cache/
+work/

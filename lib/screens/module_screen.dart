@@ -129,7 +129,14 @@ class _ModuleScreenState extends State<ModuleScreen> {
     String action,
   ) async {
     try {
-      await widget.api.call('/reservas/${item['id']}/$action', method: 'POST');
+      final response = await widget.api.call('/reservas/${item['id']}/$action', method: 'POST');
+      if (!mounted) return;
+      if (action == 'checkout' && response is Map && response['factura'] is Map) {
+        await showDialog<void>(
+          context: context,
+          builder: (_) => HotelInvoiceDialog(invoice: Map<String, dynamic>.from(response['factura'] as Map)),
+        );
+      }
       showMessage('Acción realizada correctamente.');
       await load();
     } on ApiException catch (exception) {

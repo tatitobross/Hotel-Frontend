@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:html' as html;
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../app.dart';
 import '../config/api_config.dart';
@@ -26,12 +26,16 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!(formKey.currentState?.validate() ?? false)) return;
     setState(() { loading = true; error = null; });
     try {
-      final response = await html.HttpRequest.request('$apiBaseUrl/login', method: 'POST', requestHeaders: const {'Accept':'application/json','Content-Type':'application/json'}, sendData: jsonEncode({'username':username.text.trim(),'password':password.text,'device_name':'hotel-flutter'}));
-      final data = jsonDecode(response.responseText ?? '{}');
-      if ((response.status ?? 0) < 200 || (response.status ?? 0) >= 300 || data['access_token'] == null) throw ApiException(errorText(data));
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/login'),
+        headers: const {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username.text.trim(), 'password': password.text, 'device_name': 'hotel-flutter'}),
+      );
+      final data = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300 || data['access_token'] == null) throw ApiException(errorText(data));
       if (!mounted) return;
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen(token: data['access_token'].toString(), user: Map<String,dynamic>.from(data['user'] as Map))));
-    } on html.ProgressEvent {
+    } on http.ClientException {
       setState(() => error = 'No se pudo conectar con Laravel. Inicia el backend en el puerto 8000.');
     } on ApiException catch (exception) {
       setState(() => error = exception.message);

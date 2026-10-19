@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:html' as html;
+import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
 
@@ -27,23 +27,26 @@ class Api {
 
   Future<dynamic> call(String path, {String method = 'GET', Map<String, dynamic>? body}) async {
     try {
-      final response = await html.HttpRequest.request(
-        '$apiBaseUrl$path',
-        method: method,
-        requestHeaders: {
+      final uri = Uri.parse('$apiBaseUrl$path');
+      final headers = {
           'Accept': 'application/json',
           if (body != null) 'Content-Type': 'application/json',
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-        },
-        sendData: body == null ? null : jsonEncode(body),
-      );
-      final decoded = response.responseText == null || response.responseText!.isEmpty
+        };
+      final response = await switch (method) {
+        'POST' => http.post(uri, headers: headers, body: body == null ? null : jsonEncode(body)),
+        'PUT' => http.put(uri, headers: headers, body: body == null ? null : jsonEncode(body)),
+        'PATCH' => http.patch(uri, headers: headers, body: body == null ? null : jsonEncode(body)),
+        'DELETE' => http.delete(uri, headers: headers),
+        _ => http.get(uri, headers: headers),
+      };
+      final decoded = response.body.isEmpty
           ? <String, dynamic>{}
-          : jsonDecode(response.responseText!);
-      final status = response.status ?? 0;
+          : jsonDecode(response.body);
+      final status = response.statusCode;
       if (status < 200 || status >= 300) throw ApiException(errorText(decoded));
       return decoded;
-    } on html.ProgressEvent {
+    } on http.ClientException {
       throw const ApiException('No se pudo conectar con Laravel en el puerto 8000.');
     }
   }
